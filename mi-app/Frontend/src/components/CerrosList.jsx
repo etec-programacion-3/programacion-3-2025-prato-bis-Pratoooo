@@ -1,4 +1,6 @@
+// mi-app/src/components/CerrosList.jsx
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom"; // 👈 AÑADIR ESTA LÍNEA
 import axios from "axios";
 
 const CerrosList = () => {
@@ -6,7 +8,7 @@ const CerrosList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Datos de respaldo en caso de que el backend no funcione
+// Datos de respaldo en caso de que el backend no funcione
   const cerrosRespaldo = [
     {
       id: 1,
@@ -74,12 +76,12 @@ const CerrosList = () => {
     }
   ];
 
+  // useEffect (sin cambios)
   useEffect(() => {
     setLoading(true);
     axios.get("http://localhost:3001/cerros")
       .then(response => {
         console.log("✅ Datos recibidos del backend:", response.data);
-        // Si el backend no devuelve las propiedades necesarias, usar datos de respaldo
         if (response.data.length > 0 && !response.data[0].imagen) {
           console.warn("⚠️ Backend no devuelve datos completos, usando datos de respaldo");
           setCerros(cerrosRespaldo);
@@ -113,35 +115,18 @@ const CerrosList = () => {
       backgroundColor: "#f5f5f5",
       minHeight: "100vh"
     }}>
-      {/* Header */}
+      {/* Header (sin cambios) */}
       <div style={{ 
         textAlign: "center", 
-        marginBottom: "50px",
-        padding: "30px",
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        borderRadius: "20px",
-        color: "white",
-        boxShadow: "0 10px 30px rgba(0,0,0,0.2)"
+        // ... (todos tus estilos del header quedan igual)
       }}>
-        <h1 style={{ 
-          fontSize: "3.5em", 
-          margin: "0 0 10px 0",
-          textShadow: "2px 2px 4px rgba(0,0,0,0.3)"
-        }}>
+        <h1 style={{ /*...*/ }}>
           🏔️ Cerros de Mendoza
         </h1>
-        <p style={{ 
-          fontSize: "1.3em", 
-          margin: "10px 0 0 0",
-          opacity: 0.95
-        }}>
+        <p style={{ /*...*/ }}>
           Descubre los senderos más impresionantes de Mendoza
         </p>
-        <p style={{
-          fontSize: "1em",
-          marginTop: "15px",
-          opacity: 0.85
-        }}>
+        <p style={{ /*...*/ }}>
           📊 Total de cerros: {cerros.length} | 📏 Altura promedio: {Math.round(cerros.reduce((sum, c) => sum + c.altura, 0) / cerros.length).toLocaleString()}m
         </p>
       </div>
@@ -154,24 +139,32 @@ const CerrosList = () => {
         marginTop: "20px"
       }}>
         {cerros.map(cerro => (
-          <div key={cerro.id} style={{
-            border: "none",
-            borderRadius: "20px",
-            overflow: "hidden",
-            background: "white",
-            boxShadow: "0 5px 20px rgba(0,0,0,0.1)",
-            transition: "all 0.3s ease",
-            cursor: "pointer"
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "translateY(-10px)";
-            e.currentTarget.style.boxShadow = "0 15px 40px rgba(0,0,0,0.2)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "translateY(0)";
-            e.currentTarget.style.boxShadow = "0 5px 20px rgba(0,0,0,0.1)";
-          }}
+          // 👇 ¡CAMBIO AQUÍ! Reemplazamos el 'div' por 'Link'
+          <Link 
+            key={cerro.id}
+            to={`/cerro/${cerro.id}`} // <- La nueva ruta de detalle
+            style={{
+              border: "none",
+              borderRadius: "20px",
+              overflow: "hidden",
+              background: "white",
+              boxShadow: "0 5px 20px rgba(0,0,0,0.1)",
+              transition: "all 0.3s ease",
+              cursor: "pointer",
+              textDecoration: "none", // <- Para quitar el subrayado del link
+              color: "inherit"      // <- Para que el texto no sea azul
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-10px)";
+              e.currentTarget.style.boxShadow = "0 15px 40px rgba(0,0,0,0.2)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "0 5px 20px rgba(0,0,0,0.1)";
+            }}
           >
+            {/* TODO EL CONTENIDO INTERNO DE LA TARJETA QUEDA IDÉNTICO */}
+            
             {/* Imagen */}
             <div style={{ 
               position: "relative",
@@ -195,13 +188,7 @@ const CerrosList = () => {
                 position: "absolute",
                 top: "15px",
                 right: "15px",
-                background: "rgba(255,255,255,0.95)",
-                padding: "8px 15px",
-                borderRadius: "20px",
-                fontWeight: "bold",
-                color: "#667eea",
-                fontSize: "0.9em",
-                boxShadow: "0 4px 10px rgba(0,0,0,0.2)"
+                // ... (tus estilos del badge quedan igual)
               }}>
                 📏 {cerro.altura.toLocaleString()}m
               </div>
@@ -209,44 +196,22 @@ const CerrosList = () => {
             
             {/* Contenido */}
             <div style={{ padding: "25px" }}>
-              <h2 style={{ 
-                margin: "0 0 15px 0", 
-                color: "#2c3e50",
-                fontSize: "1.8em",
-                fontWeight: "600"
-              }}>
+              <h2 style={{ /*...*/ }}>
                 {cerro.nombre}
               </h2>
               
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                marginBottom: "15px",
-                padding: "10px",
-                background: "#f8f9fa",
-                borderRadius: "10px"
-              }}>
+              <div style={{ /*...*/ }}>
                 <span style={{ fontSize: "1.2em" }}>📍</span>
-                <span style={{ 
-                  fontSize: "1em", 
-                  color: "#555",
-                  fontWeight: "500"
-                }}>
+                <span style={{ /*...*/ }}>
                   {cerro.provincia}
                 </span>
               </div>
               
-              <p style={{ 
-                fontSize: "0.95em", 
-                color: "#666",
-                lineHeight: "1.7",
-                margin: "0"
-              }}>
+              <p style={{ /*...*/ }}>
                 {cerro.descripcion}
               </p>
             </div>
-          </div>
+          </Link> // 👈 Cierre del 'Link'
         ))}
       </div>
     </div>
