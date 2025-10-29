@@ -27,7 +27,7 @@ const Navbar = ({ user, handleLogout, onLoginClick, onRegisterClick }) => {
     };
   }, []);
 
-  // Estilo para los botones
+  // Estilo para los botones (TU CÓDIGO EXACTO)
   const authBtnStyle = {
     background: 'rgba(255,255,255,0.2)',
     border: 'none',
@@ -96,7 +96,7 @@ const Navbar = ({ user, handleLogout, onLoginClick, onRegisterClick }) => {
         gap: '15px'
       }}>
         
-        {/* --- Logo --- */}
+        {/* --- Logo (TU CÓDIGO EXACTO) --- */}
         <Link to="/" style={{ textDecoration: 'none', color: 'white' }}>
           <h1 style={{
             margin: 0,
@@ -114,6 +114,7 @@ const Navbar = ({ user, handleLogout, onLoginClick, onRegisterClick }) => {
           alignItems: 'center',
           flexWrap: 'wrap'
         }}>
+          {/* Link Senderos (TU CÓDIGO EXACTO) */}
           <Link 
             to="/senderos" 
             style={{...authBtnStyle, textDecoration: 'none'}}
@@ -122,6 +123,7 @@ const Navbar = ({ user, handleLogout, onLoginClick, onRegisterClick }) => {
           >
             📋 Senderos
           </Link>
+          {/* Link Mapa (TU CÓDIGO EXACTO) */}
           <Link 
             to="/mapa" 
             style={{...authBtnStyle, textDecoration: 'none'}}
@@ -130,8 +132,23 @@ const Navbar = ({ user, handleLogout, onLoginClick, onRegisterClick }) => {
           >
             🗺️ Mapa
           </Link>
+          
+          {/* --- 👇 LINK PREMIUM AÑADIDO --- */}
+          <Link 
+            to="/premium" 
+            style={{
+              ...authBtnStyle, // Usa el mismo estilo base
+              textDecoration: 'none', 
+              background: 'rgba(255, 215, 0, 0.2)' // Fondo dorado suave
+            }} 
+            onMouseEnter={(e) => e.target.style.background = 'rgba(255, 215, 0, 0.3)'} // Efecto hover
+            onMouseLeave={(e) => e.target.style.background = 'rgba(255, 215, 0, 0.2)'} // Volver al normal
+          >
+            💎 Premium
+          </Link>
+          {/* --- 👆 FIN LINK PREMIUM AÑADIDO --- */}
 
-          {/* --- Lógica de Login/Logout --- */}
+          {/* --- Lógica de Login/Logout (TU CÓDIGO EXACTO) --- */}
           {user ? (
             <div style={{ position: 'relative' }} ref={menuRef}>
               <button 
