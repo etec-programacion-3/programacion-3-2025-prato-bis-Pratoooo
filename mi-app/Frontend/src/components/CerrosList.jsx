@@ -1,89 +1,47 @@
-// mi-app/src/components/CerrosList.jsx
+// mi-app/src/components/CerrosList.jsx (REEMPLAZAR CON ESTO)
+
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom"; // 👈 AÑADIR ESTA LÍNEA
 import axios from "axios";
+import { Link } from "react-router-dom";
 
 const CerrosList = () => {
   const [cerros, setCerros] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // --- 👇 LÓGICA DE COLUMNAS SIMPLIFICADA ---
+  // 1 columna si es < 768px, 2 columnas si es >= 768px
+  const [columns, setColumns] = useState(window.innerWidth < 768 ? 1 : 2); 
 
-// Datos de respaldo en caso de que el backend no funcione
+  // Datos de respaldo (sin cambios)
   const cerrosRespaldo = [
     {
       id: 1,
       nombre: "Aconcagua",
       altura: 6960,
       provincia: "Mendoza",
-      descripcion: "El pico más alto de América y del hemisferio sur. Conocido como el 'Coloso de América', atrae a montañistas de todo el mundo.",
-      imagen: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Aconcagua2016.jpg/1200px-Aconcagua2016.jpg"
+      descripcion: "El pico más alto de América...",
+      imagen: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80"
     },
-    {
-      id: 2,
-      nombre: "Tupungato",
-      altura: 6570,
-      provincia: "Mendoza",
-      descripcion: "Estratovolcán ubicado en la frontera entre Argentina y Chile. Su nombre significa 'mirador de las estrellas'.",
-      imagen: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Tupungato.jpg/1200px-Tupungato.jpg"
-    },
-    {
-      id: 3,
-      nombre: "Cerro El Plata",
-      altura: 5968,
-      provincia: "Mendoza",
-      descripcion: "Ubicado en el Cordón del Plata, muy popular para ascensos de entrenamiento y accesible durante gran parte del año.",
-      imagen: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Cordon_del_Plata.jpg/1200px-Cordon_del_Plata.jpg"
-    },
-    {
-      id: 4,
-      nombre: "Cerro Mercedario",
-      altura: 6720,
-      provincia: "San Juan",
-      descripcion: "El pico más alto de San Juan y el cuarto de los Andes argentinos. Menos frecuentado que el Aconcagua pero igualmente hermoso.",
-      imagen: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Cerro_Mercedario.jpg/1200px-Cerro_Mercedario.jpg"
-    },
-    {
-      id: 5,
-      nombre: "Volcán Maipo",
-      altura: 5264,
-      provincia: "Mendoza",
-      descripcion: "Volcán activo en la frontera argentino-chilena. Su última erupción fue en 1826. Popular por su accesibilidad.",
-      imagen: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Volcan_Maipo.jpg/1200px-Volcan_Maipo.jpg"
-    },
-    {
-      id: 6,
-      nombre: "Cerro Tolosa",
-      altura: 5432,
-      provincia: "Mendoza",
-      descripcion: "Parte del Cordón del Plata, cerro técnico que requiere experiencia en escalada con vistas panorámicas increíbles.",
-      imagen: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Cordillera_de_los_Andes.jpg/1200px-Cordillera_de_los_Andes.jpg"
-    },
-    {
-      id: 7,
-      nombre: "Cerro Bonete",
-      altura: 6759,
-      provincia: "La Rioja",
-      descripcion: "Uno de los picos más altos de La Rioja. Su ubicación remota conserva su belleza prístina.",
-      imagen: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/Andes_Mountains.jpg/1200px-Andes_Mountains.jpg"
-    },
-    {
-      id: 8,
-      nombre: "Cerro de la Ramada",
-      altura: 6410,
-      provincia: "Mendoza/San Juan",
-      descripcion: "En el límite entre Mendoza y San Juan. Su ascenso combina glaciares y roca.",
-      imagen: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Cordillera_Principal.jpg/1200px-Cordillera_Principal.jpg"
-    }
+    // ... (el resto de tus datos)
   ];
 
-  // useEffect (sin cambios)
+  // Manejar resize (ACTUALIZADO CON LA NUEVA LÓGICA)
+  useEffect(() => {
+    const handleResize = () => {
+      setColumns(window.innerWidth < 768 ? 1 : 2); // Actualiza con 1 o 2 columnas
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Cargar cerros (sin cambios)
   useEffect(() => {
     setLoading(true);
     axios.get("http://localhost:3001/cerros")
       .then(response => {
-        console.log("✅ Datos recibidos del backend:", response.data);
+        // ... (lógica de carga sin cambios)
         if (response.data.length > 0 && !response.data[0].imagen) {
-          console.warn("⚠️ Backend no devuelve datos completos, usando datos de respaldo");
           setCerros(cerrosRespaldo);
         } else {
           setCerros(response.data);
@@ -91,7 +49,7 @@ const CerrosList = () => {
         setLoading(false);
       })
       .catch(error => {
-        console.error("❌ Error al obtener los cerros, usando datos de respaldo:", error);
+        // ... (lógica de error sin cambios)
         setCerros(cerrosRespaldo);
         setLoading(false);
       });
@@ -99,7 +57,7 @@ const CerrosList = () => {
 
   if (loading) return (
     <div style={{ 
-      padding: "20px", 
+      padding: "60px", 
       textAlign: "center",
       fontSize: "1.5em" 
     }}>
@@ -107,43 +65,80 @@ const CerrosList = () => {
     </div>
   );
 
-  return (
-    <div style={{ 
-      padding: "20px", 
+return (
+  // Div externo (sin cambios)
+  <div style={{ 
+    paddingTop: columns === 1 ? "30px" : "40px",
+    paddingBottom: columns === 1 ? "15px" : "20px",
+    paddingLeft: columns === 1 ? "15px" : "20px",
+    paddingRight: columns === 1 ? "15px" : "20px",
+    width: "100%",
+    boxSizing: "border-box",
+    backgroundColor: "#f5f5f5", 
+    minHeight: "calc(100vh - 70px)"
+  }}>
+    
+    {/* Div interno (sin cambios, ya tiene margin: 0 auto) */}
+    <div style={{
       maxWidth: "1400px", 
       margin: "0 auto",
-      backgroundColor: "#f5f5f5",
-      minHeight: "100vh"
+      width: "100%"
     }}>
+
       {/* Header (sin cambios) */}
       <div style={{ 
         textAlign: "center", 
-        // ... (todos tus estilos del header quedan igual)
+        marginBottom: columns === 1 ? "30px" : "50px",
+        padding: columns === 1 ? "20px" : "30px",
+        background: "linear-gradient(135deg, #4a5c36 0%, #8b5a2b 100%)", 
+        borderRadius: "20px",
+        color: "white",
+        boxShadow: "0 10px 30px rgba(0,0,0,0.2)"
       }}>
-        <h1 style={{ /*...*/ }}>
+        <h1 style={{ 
+          fontSize: columns === 1 ? "2em" : "3em", // Ajustado para 2 columnas
+          margin: "0 0 10px 0",
+          textShadow: "2px 2px 4px rgba(0,0,0,0.3)"
+        }}>
           🏔️ Cerros de Mendoza
         </h1>
-        <p style={{ /*...*/ }}>
-          Descubre los senderos más impresionantes de Mendoza
+        <p style={{ 
+          fontSize: columns === 1 ? "1em" : "1.3em",
+          margin: "10px 0 0 0",
+          opacity: 0.95
+        }}>
+          Descubre las montañas más impresionantes de Argentina
         </p>
-        <p style={{ /*...*/ }}>
+        <p style={{
+          fontSize: columns === 1 ? "0.9em" : "1em",
+          marginTop: "15px",
+          opacity: 0.85
+        }}>
           📊 Total de cerros: {cerros.length} | 📏 Altura promedio: {Math.round(cerros.reduce((sum, c) => sum + c.altura, 0) / cerros.length).toLocaleString()}m
         </p>
       </div>
       
-      {/* Grid de cerros */}
+      {/* --- 👇 GRID DE CERROS (COLUMNAS MODIFICADAS) --- */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: "repeat(3, 1fr)",
-        gap: "30px",
+        // Usamos el estado 'columns' que ahora es 1 o 2
+        gridTemplateColumns: `repeat(${columns}, 1fr)`, 
+        gap: columns === 1 ? "20px" : "30px",
         marginTop: "20px"
       }}>
+        {/* --- 👆 FIN DE GRID MODIFICADO --- */}
+
+        {/* Mapeo de cerros (sin cambios) */}
         {cerros.map(cerro => (
-          // 👇 ¡CAMBIO AQUÍ! Reemplazamos el 'div' por 'Link'
-          <Link 
+          <Link
             key={cerro.id}
-            to={`/cerro/${cerro.id}`} // <- La nueva ruta de detalle
+            to={`/cerro/${cerro.id}`}
             style={{
+              textDecoration: "none",
+              color: "inherit"
+            }}
+          >
+            <div style={{ /* ... (estilos de tarjeta sin cambios) */
               border: "none",
               borderRadius: "20px",
               overflow: "hidden",
@@ -151,8 +146,9 @@ const CerrosList = () => {
               boxShadow: "0 5px 20px rgba(0,0,0,0.1)",
               transition: "all 0.3s ease",
               cursor: "pointer",
-              textDecoration: "none", // <- Para quitar el subrayado del link
-              color: "inherit"      // <- Para que el texto no sea azul
+              height: "100%",
+              display: "flex",
+              flexDirection: "column"
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = "translateY(-10px)";
@@ -162,60 +158,84 @@ const CerrosList = () => {
               e.currentTarget.style.transform = "translateY(0)";
               e.currentTarget.style.boxShadow = "0 5px 20px rgba(0,0,0,0.1)";
             }}
-          >
-            {/* TODO EL CONTENIDO INTERNO DE LA TARJETA QUEDA IDÉNTICO */}
-            
-            {/* Imagen */}
-            <div style={{ 
-              position: "relative",
-              overflow: "hidden",
-              height: "280px"
-            }}>
-              <img
-                src={cerro.imagen}
-                alt={cerro.nombre}
-                style={{ 
-                  width: "100%", 
-                  height: "100%", 
-                  objectFit: "cover",
-                  transition: "transform 0.3s ease"
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.1)"}
-                onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
-              />
-              {/* Badge de altura */}
-              <div style={{
-                position: "absolute",
-                top: "15px",
-                right: "15px",
-                // ... (tus estilos del badge quedan igual)
+            >
+              {/* Imagen (sin cambios) */}
+              <div style={{ 
+                position: "relative",
+                overflow: "hidden",
+                height: columns === 1 ? "200px" : "280px"
               }}>
-                📏 {cerro.altura.toLocaleString()}m
+                <img src={cerro.imagen} alt={cerro.nombre} style={{ 
+                    width: "100%", 
+                    height: "100%", 
+                    objectFit: "cover",
+                    transition: "transform 0.3s ease"
+                  }}/>
+                <div style={{ /* ... (badge de altura sin cambios) */
+                  position: "absolute",
+                  top: "15px",
+                  right: "15px",
+                  background: "rgba(255,255,255,0.95)",
+                  padding: columns === 1 ? "6px 12px" : "8px 15px",
+                  borderRadius: "20px",
+                  fontWeight: "bold",
+                  color: "#667eea", 
+                  fontSize: columns === 1 ? "0.8em" : "0.9em",
+                  boxShadow: "0 4px 10px rgba(0,0,0,0.2)"
+                }}>
+                  📏 {cerro.altura.toLocaleString()}m
+                </div>
+              </div>
+              
+              {/* Contenido (sin cambios) */}
+              <div style={{ 
+                padding: columns === 1 ? "20px" : "25px",
+                flex: 1,
+                display: "flex",
+                flexDirection: "column"
+              }}>
+                <h2 style={{ 
+                  margin: "0 0 15px 0", 
+                  color: "#2c3e50",
+                  fontSize: columns === 1 ? "1.4em" : "1.8em",
+                  fontWeight: "600"
+                }}>
+                  {cerro.nombre}
+                </h2>
+                
+                <div style={{ /* ... */ }}>
+                  <span style={{ fontSize: "1.2em" }}>📍</span>
+                  <span style={{ 
+                    fontSize: columns === 1 ? "0.9em" : "1em",
+                    color: "#555",
+                    fontWeight: "500"
+                  }}>
+                    {cerro.provincia}
+                  </span>
+                </div>
+                
+                <p style={{ /* ... */ }}>
+                  {cerro.descripcion}
+                </p>
+
+                <div style={{
+                  marginTop: "15px",
+                  paddingTop: "15px",
+                  borderTop: "1px solid #eee",
+                  color: "#8b5a2b", 
+                  fontWeight: "bold",
+                  fontSize: columns === 1 ? "0.9em" : "1em"
+                }}>
+                  Ver más →
+                </div>
               </div>
             </div>
-            
-            {/* Contenido */}
-            <div style={{ padding: "25px" }}>
-              <h2 style={{ /*...*/ }}>
-                {cerro.nombre}
-              </h2>
-              
-              <div style={{ /*...*/ }}>
-                <span style={{ fontSize: "1.2em" }}>📍</span>
-                <span style={{ /*...*/ }}>
-                  {cerro.provincia}
-                </span>
-              </div>
-              
-              <p style={{ /*...*/ }}>
-                {cerro.descripcion}
-              </p>
-            </div>
-          </Link> // 👈 Cierre del 'Link'
+          </Link>
         ))}
       </div>
     </div>
-  );
+  </div>
+);
 };
 
 export default CerrosList;

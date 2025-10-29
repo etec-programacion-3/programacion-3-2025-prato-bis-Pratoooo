@@ -1,24 +1,35 @@
-// mi-app/src/App.jsx
+// mi-app/src/App.jsx (REEMPLAZAR CON ESTO)
+
 import { useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom'; // 👈 AÑADIR ESTA LÍNEA
+import { Routes, Route, useLocation } from 'react-router-dom'; 
 import axios from 'axios';
+
+import Navbar from './components/Navbar';
+import AuthModal from './components/AuthModal';
+import DetalleCerro from './components/DetalleCerro';
 import CerrosList from './components/CerrosList';
 import MapaCerros from './components/MapaCerros';
-import DetalleCerro from './components/DetalleCerro'; // 👈 AÑADIR ESTA LÍNEA (lo creamos en Paso 5)
+import Favoritos from './components/Favoritos';
+import CargarCerro from './components/CargarCerro';
+import HomePage from './components/HomePage'; 
 
 function App() {
+  const location = useLocation();
+  const isHomePage = location.pathname === '/';
+
+  // --- Estados (sin cambios) ---
   const [cerros, setCerros] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
-  const [form, setForm] = useState({ username: '', password: '' });
+  const [form, setForm] = useState({ username: '', email: '', password: '' });
   const [isLogin, setIsLogin] = useState(true);
   const [message, setMessage] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // 🔹 Cargar cerros
+  // --- useEffect (sin cambios) ---
   useEffect(() => {
     axios.get('http://localhost:3001/cerros')
       .then(response => {
-        console.log('Cerros cargados:', response.data);
         setCerros(response.data);
         setLoading(false);
       })
@@ -28,152 +39,108 @@ function App() {
       });
   }, []);
 
-  // 🔹 Manejar formulario (sin cambios)
+  // --- Todas tus funciones (handleChange, handleSubmit, etc. SIN CAMBIOS) ---
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
+  
+  const handleOpenLoginModal = () => {
+    setIsLogin(true);
+    setMessage('');
+    setForm({ username: '', email: '', password: '' });
+    setIsModalOpen(true);
+  };
+  
+  const handleOpenRegisterModal = () => {
+    setIsLogin(false);
+    setMessage('');
+    setForm({ username: '', email: '', password: '' });
+    setIsModalOpen(true);
+  };
+  
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setMessage('');
+  };
 
-  // 🔹 Registrar o iniciar sesión (sin cambios)
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const url = isLogin
         ? 'http://localhost:3001/auth/login'
         : 'http://localhost:3001/auth/register';
-
-      const response = await axios.post(url, form);
-
+      const dataToSend = isLogin 
+        ? { username: form.username, password: form.password } 
+        : form;
+      const response = await axios.post(url, dataToSend);
       if (isLogin) {
-        setUser(form.username);
+        setUser(response.data.user);
         setMessage('✅ Sesión iniciada correctamente');
+        handleCloseModal();
       } else {
         setMessage('✅ Usuario registrado, ahora iniciá sesión');
         setIsLogin(true);
+        setForm(prevForm => ({ ...prevForm, email: '' }));
       }
-
-      setForm({ username: '', password: '' });
     } catch (err) {
       console.error(err);
       setMessage('❌ Error: ' + (err.response?.data?.error || 'Intentalo de nuevo'));
     }
   };
-
-  // 🔹 Cerrar sesión (sin cambios)
+  
   const handleLogout = () => {
     setUser(null);
     setMessage('👋 Sesión cerrada');
   };
 
+  const inputStyle = { /* ... */ };
+  const btnStyle = { /* ... */ };
+
   if (loading) {
     return (
-      <div style={{ 
-        padding: '60px', 
-        textAlign: 'center',
-        fontSize: '2em' 
-      }}>
+      <div style={{ padding: '60px', textAlign: 'center', fontSize: '2em' }}>
         ⏳ Cargando aplicación...
       </div>
     );
   }
 
   return (
-    <div style={{ display: 'flex' }}>
-      {/* 🔸 Contenido principal (AHORA ES DINÁMICO) */}
-      <div style={{ flex: 1, padding: '20px' }}>
-        
-        {/* 👇 AQUÍ ESTÁ LA MAGIA DE LAS RUTAS 👇 */}
-        <Routes>
-          {/* Ruta 1: La Home (lo que ya tenías) */}
-          <Route path="/" element={
-            <>
-              <CerrosList />
-              <MapaCerros cerros={cerros} />
-            </>
-          } />
+    // --- 👇 LÍNEA MODIFICADA (revertida) ---
+    // Volvemos el padding a 80px (70px de la barra + 10px de espacio)
+    <div className="app-container" style={{ paddingTop: isHomePage ? '0' : '80px' }}> 
+      
+      <Navbar 
+        user={user} 
+        handleLogout={handleLogout} 
+        onLoginClick={handleOpenLoginModal}
+        onRegisterClick={handleOpenRegisterModal}
+      />
 
-          {/* Ruta 2: La nueva página de detalle */}
-          <Route path="/cerro/:id" element={<DetalleCerro />} />
+      {isModalOpen && (
+        <AuthModal
+          onClose={handleCloseModal}
+          form={form}
+          isLogin={isLogin}
+          setIsLogin={setIsLogin}
+          message={message}
+          handleChange={handleChange}
+          handleSubmit={handleSubmit}
+          inputStyle={inputStyle}
+          btnStyle={btnStyle}
+        />
+      )}
 
-        </Routes>
-        {/* 👆 FIN DE LAS RUTAS 👆 */}
-
-      </div>
-
-      {/* 🔸 Sidebar de usuario (ESTO QUEDA IDÉNTICO) */}
-      <div style={{
-        width: '300px',
-        backgroundColor: '#f5f5f5',
-        padding: '20px',
-        borderLeft: '2px solid #ccc'
-      }}>
-        {user ? (
-          <div>
-            <h3>👤 Tu cuenta</h3>
-            <p><b>Usuario:</b> {user}</p>
-            <button onClick={handleLogout} style={btnStyle}>Cerrar sesión</button>
-
-            <hr />
-            <h4>🌄 Tus cerros favoritos</h4>
-            <p>(Aún no hay cerros favoritos)</p>
-          </div>
-        ) : (
-          <div>
-            <h3>{isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}</h3>
-            <form onSubmit={handleSubmit}>
-              <input
-                type="text"
-                name="username"
-                placeholder="Usuario"
-                value={form.username}
-                onChange={handleChange}
-                required
-                style={inputStyle}
-              />
-              <input
-                type="password"
-                name="password"
-                placeholder="Contraseña"
-                value={form.password}
-                onChange={handleChange}
-                required
-                style={inputStyle}
-              />
-              <button type="submit" style={btnStyle}>
-                {isLogin ? 'Entrar' : 'Registrarse'}
-              </button>
-            </form>
-            <button
-              onClick={() => setIsLogin(!isLogin)}
-              style={{ ...btnStyle, backgroundColor: '#888' }}
-            >
-              {isLogin ? 'Crear cuenta nueva' : 'Ya tengo cuenta'}
-            </button>
-            {message && <p style={{ marginTop: '10px', color: 'blue' }}>{message}</p>}
-          </div>
-        )}
-      </div>
+      {/* --- Rutas (sin cambios) --- */}
+      <Routes>
+        <Route path="/" element={<HomePage />} /> 
+        <Route path="/senderos" element={<CerrosList />} /> 
+        <Route path="/mapa" element={<MapaCerros cerros={cerros} />} />
+        <Route path="/cerro/:id" element={<DetalleCerro />} />
+        <Route path="/favoritos" element={<Favoritos />} />
+        <Route path="/cargar" element={<CargarCerro />} />
+      </Routes>
     </div>
   );
 }
-
-// 🔹 Estilos (sin cambios)
-const inputStyle = {
-  display: 'block',
-  width: '100%',
-  margin: '10px 0',
-  padding: '8px',
-  borderRadius: '5px',
-  border: '1px solid #ccc'
-};
-
-const btnStyle = {
-  backgroundColor: '#007bff',
-  color: 'white',
-  border: 'none',
-  padding: '10px 15px',
-  borderRadius: '5px',
-  cursor: 'pointer',
-  marginTop: '10px'
-};
 
 export default App;
