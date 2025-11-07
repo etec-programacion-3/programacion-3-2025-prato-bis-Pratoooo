@@ -1,71 +1,187 @@
-// mi-app/src/components/CargarCerro.jsx (REEMPLAZAR CON ESTO)
+import { useState } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
-import React from 'react';
+// Creamos una instancia de axios para este componente
+// (Apunta a la misma URL base que tu App.jsx)
+const apiClient = axios.create({
+  baseURL: 'http://localhost:3001',
+});
 
-const CargarCerro = () => {
-  // Estilos
+// Recibimos la prop 'onCerroAdded' desde App.jsx
+const CargarCerro = ({ onCerroAdded }) => {
+  const [formData, setFormData] = useState({
+    nombre: '',
+    altura: '',
+    provincia: '',
+    descripcion: '',
+    imagen: ''
+  });
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const navigate = useNavigate(); // Hook para redirigir
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prevData => ({
+      ...prevData,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault(); // Evita que la página se recargue
+    
+    // Validación simple
+    if (!formData.nombre || !formData.altura) {
+      setError('El nombre y la altura son obligatorios.');
+      return;
+    }
+    
+    setIsLoading(true);
+    setError('');
+    setMessage('');
+
+    console.log("Enviando datos al backend:", formData);
+
+    try {
+      // Usamos la ruta POST /cerros que creamos en el backend
+      const response = await apiClient.post('/cerros', formData);
+      
+      // Si la API responde bien (201)...
+      const newCerro = response.data;
+      console.log("Respuesta del backend (nuevo cerro):", newCerro);
+      
+      // 1. Llamamos a la función de App.jsx para actualizar el estado global
+      onCerroAdded(newCerro);
+
+      // 2. Mostramos un mensaje de éxito
+      setMessage(`✅ ¡Cerro "${newCerro.nombre}" guardado con éxito!`);
+      
+      // 3. Limpiamos el formulario
+      setFormData({
+        nombre: '', altura: '', provincia: '', descripcion: '', imagen: ''
+      });
+
+      // 4. (Opcional) Redirigimos a la lista de senderos después de 2 segundos
+      setTimeout(() => {
+        navigate('/senderos');
+      }, 2000);
+
+    } catch (err) {
+      console.error("Error al guardar el cerro:", err.response || err.message);
+      setError(err.response?.data?.error || 'No se pudo conectar con el servidor.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // --- Estilos (similares a los de tu AuthModal) ---
+  const formStyle = {
+    maxWidth: '700px',
+    margin: '40px auto',
+    padding: '30px',
+    backgroundColor: '#ffffff',
+    borderRadius: '20px',
+    boxShadow: '0 10px 30px rgba(0,0,0,0.1)'
+  };
+  
   const inputStyle = {
     display: 'block',
     width: '100%',
-    boxSizing: 'border-box',
-    margin: '15px 0',
+    margin: '10px 0 20px 0',
     padding: '12px',
     fontSize: '1em',
     border: '2px solid #ddd',
-    borderRadius: '10px'
+    borderRadius: '10px',
+    boxSizing: 'border-box'
   };
-
+   
   const btnStyle = {
-    // --- 👇 LÍNEA MODIFICADA ---
-    backgroundColor: '#4a5c36', // Verde oscuro
+    backgroundColor: isLoading ? '#ccc' : '#4a5c36', // Verde oscuro
     color: 'white',
     border: 'none',
-    padding: '15px 20px',
+    padding: '12px 15px',
     borderRadius: '10px',
-    cursor: 'pointer',
+    cursor: isLoading ? 'not-allowed' : 'pointer',
     marginTop: '10px',
+    width: '100%',
     fontSize: '1.1em',
-    fontWeight: 'bold'
+    fontWeight: 'bold',
+    boxSizing: 'border-box'
   };
 
   return (
-    <div style={{ padding: '40px', maxWidth: '800px', margin: '0 auto' }}>
-      <h1 style={{ 
-        textAlign: 'center', 
-        fontSize: '2.5em', 
-        color: '#2c3e50', 
-        marginBottom: '30px' 
-      }}>
-        ➕ Cargar un Nuevo Cerro
-      </h1>
-      <p style={{ textAlign: 'center', fontSize: '1.1em', color: '#555', marginBottom: '30px' }}>
-        Completa el formulario para añadir un nuevo sendero o cerro a la base de datos.
+    <div style={formStyle}>
+      <h1 style={{ textAlign: 'center', color: '#4a5c36' }}>🏔️ Cargar Nuevo Cerro</h1>
+      <p style={{ textAlign: 'center', color: '#555', marginTop: '-10px', marginBottom: '30px' }}>
+        Añade un nuevo sendero a la base de datos.
       </p>
+      
+      <form onSubmit={handleSubmit}>
+        <label htmlFor="nombre">Nombre del Cerro *</label>
+        <input
+          type="text"
+          name="nombre"
+          id="nombre"
+          value={formData.nombre}
+          onChange={handleChange}
+          style={inputStyle}
+          placeholder="Ej: Cerro Aconcagua"
+        />
+        
+        <label htmlFor="altura">Altura (en metros) *</label>
+        <input
+          type="number"
+          name="altura"
+          id="altura"
+          value={formData.altura}
+          onChange={handleChange}
+          style={inputStyle}
+          placeholder="Ej: 6960"
+        />
+        
+        <label htmlFor="provincia">Provincia</label>
+        <input
+          type="text"
+          name="provincia"
+          id="provincia"
+          value={formData.provincia}
+          onChange={handleChange}
+          style={inputStyle}
+          placeholder="Ej: Mendoza"
+        />
+        
+        <label htmlFor="descripcion">Descripción</label>
+        <textarea
+          name="descripcion"
+          id="descripcion"
+          value={formData.descripcion}
+          onChange={handleChange}
+          style={{...inputStyle, height: '100px', resize: 'vertical'}}
+          placeholder="Una breve descripción del sendero..."
+        />
+        
+        <label htmlFor="imagen">URL de la Imagen</label>
+        <input
+          type="text"
+          name="imagen"
+          id="imagen"
+          value={formData.imagen}
+          onChange={handleChange}
+          style={inputStyle}
+          placeholder="https://images.unsplash.com/..."
+        />
 
-      <form onSubmit={(e) => e.preventDefault()} style={{
-        background: 'white',
-        padding: '30px',
-        borderRadius: '15px',
-        boxShadow: '0 5px 20px rgba(0,0,0,0.1)'
-      }}>
-        <label>Nombre del Cerro:</label>
-        <input type="text" placeholder="Ej: Cerro Aconcagua" style={inputStyle} />
-        
-        <label>Altura (en metros):</label>
-        <input type="number" placeholder="Ej: 6960" style={inputStyle} />
-        
-        <label>Provincia:</label>
-        <input type="text" placeholder="Ej: Mendoza" style={inputStyle} />
-
-        <label>Descripción Corta:</label>
-        <textarea placeholder="Una breve descripción..." style={{...inputStyle, height: '100px'}} />
-        
-        <label>URL de la Imagen:</label>
-        <input type="text" placeholder="https://..." style={inputStyle} />
-        
-        <button type="submit" style={btnStyle}>
-          Guardar Cerro
+        <button type="submit" style={btnStyle} disabled={isLoading}>
+          {isLoading ? 'Guardando...' : 'Guardar Cerro'}
         </button>
+
+        {/* --- Mensajes de estado --- */}
+        {error && <p style={{ color: 'red', textAlign: 'center', marginTop: '15px' }}>❌ Error: {error}</p>}
+        {message && <p style={{ color: 'green', textAlign: 'center', marginTop: '15px' }}>{message}</p>}
       </form>
     </div>
   );

@@ -1,76 +1,111 @@
 import express from "express";
+import authenticateToken from "../middleware/authMiddleware.js"; // <-- ¡IMPORTANTE!
 
 const router = express.Router();
 
-const cerros = [
-  {
-    id: 1,
-    nombre: "Aconcagua",
-    altura: 6960,
-    provincia: "Mendoza",
-    descripcion: "El pico más alto de América y del hemisferio sur. Conocido como el 'Coloso de América', atrae a montañistas de todo el mundo.",
-    imagen: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80"
-  },
-  {
-    id: 2,
-    nombre: "Tupungato",
-    altura: 6570,
-    provincia: "Mendoza",
-    descripcion: "Estratovolcán ubicado en la frontera entre Argentina y Chile. Su nombre significa 'mirador de las estrellas'.",
-    imagen: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80"
-  },
-  {
-    id: 3,
-    nombre: "Cerro El Plata",
-    altura: 5968,
-    provincia: "Mendoza",
-    descripcion: "Ubicado en el Cordón del Plata, muy popular para ascensos de entrenamiento.",
-    imagen: "https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=800&q=80"
-  },
-  {
-    id: 4,
-    nombre: "Cerro Mercedario",
-    altura: 6720,
-    provincia: "San Juan",
-    descripcion: "El pico más alto de San Juan y el cuarto de los Andes argentinos.",
-    imagen: "https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?w=800&q=80"
-  },
-  {
-    id: 5,
-    nombre: "Volcán Maipo",
-    altura: 5264,
-    provincia: "Mendoza",
-    descripcion: "Volcán activo en la frontera argentino-chilena. Su última erupción fue en 1826.",
-    imagen: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80"
-  },
-  {
-    id: 6,
-    nombre: "Cerro Tolosa",
-    altura: 5432,
-    provincia: "Mendoza",
-    descripcion: "Parte del Cordón del Plata, cerro técnico que requiere experiencia en escalada.",
-    imagen: "https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=800&q=80"
-  },
-  {
-    id: 7,
-    nombre: "Cerro Bonete",
-    altura: 6759,
-    provincia: "La Rioja",
-    descripcion: "Uno de los picos más altos de La Rioja y tercer volcán más alto del mundo.",
-    imagen: "https://images.unsplash.com/photo-1516214104703-d870798883c5?w=800&q=80"
-  },
-  {
-    id: 8,
-    nombre: "Cerro de la Ramada",
-    altura: 6410,
-    provincia: "Mendoza/San Juan",
-    descripcion: "En el límite entre Mendoza y San Juan. Su ascenso combina glaciares y roca.",
-    imagen: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80"
+// --- RUTA GET /cerros ---
+// (Esta es pública, no necesita token)
+router.get("/", async (req, res) => {
+  try {
+    const cerrosDesdeDB = await req.db.all("SELECT * FROM cerros ORDER BY id");
+    res.json(cerrosDesdeDB);
+  } catch (error) {
+    console.error("Error al obtener cerros desde la DB:", error);
+    res.status(500).json({ error: "Error interno del servidor al obtener cerros" });
   }
-];
-
-router.get("/", (req, res) => {
-  res.json(cerros);
 });
+
+// --- RUTA GET /cerros/:id ---
+// (Esta es pública, no necesita token)
+router.get("/:id", async (req, res) => {
+  try {
+    const cerro = await req.db.get("SELECT * FROM cerros WHERE id = ?", [req.params.id]);
+    if (cerro) {
+      res.json(cerro);
+    } else {
+      res.status(404).json({ error: "Cerro no encontrado" });
+    }
+  } catch (error) {
+    console.error("Error al obtener cerro por ID:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
+
+// --- RUTA POST /cerros ---
+// (AHORA PROTEGIDA: Solo usuarios logueados pueden crear)
+router.post("/", authenticateToken, async (req, res) => {
+  console.log("[API POST /cerros] Cuerpo de la petición:", req.body);
+  const { nombre, altura, provincia, descripcion, imagen } = req.body;
+
+  if (!nombre || !altura) {
+    return res.status(400).json({ error: "El 'nombre' y 'altura' son obligatorios" });
+  }
+  const alturaNum = parseInt(altura, 10);
+  if (isNaN(alturaNum)) {
+      return res.status(400).json({ error: "La 'altura' debe ser un número" });
+  }
+
+  try {
+    const sql = `
+      INSERT INTO cerros (nombre, altura, provincia, descripcion, imagen) 
+      VALUES (?, ?, ?, ?, ?)
+    `;
+    const result = await req.db.run(
+      sql,
+      [nombre, alturaNum, provincia || '', descripcion || '', imagen || '']
+    );
+    const newCerroId = result.lastID;
+    const newCerro = await req.db.get("SELECT * FROM cerros WHERE id = ?", [newCerroId]);
+
+    console.log("[API POST /cerros] Nuevo cerro creado:", newCerro);
+    res.status(201).json(newCerro);
+
+  } catch (error) {
+    console.error("Error al guardar el nuevo cerro:", error);
+    res.status(500).json({ error: "Error interno del servidor al guardar el cerro" });
+  }
+});
+
+
+// --- 👇 RUTA DELETE /cerros/:id (¡LA NUEVA!) ---
+// (PROTEGIDA: Solo usuarios logueados pueden borrar)
+router.delete("/:id", authenticateToken, async (req, res) => {
+  const cerroId = parseInt(req.params.id, 10);
+  console.log(`[API DELETE /cerros/${cerroId}] Petición de borrado recibida.`);
+
+  if (isNaN(cerroId)) {
+    return res.status(400).json({ error: "ID de cerro inválido" });
+  }
+
+  try {
+    // 1. Verificamos si el cerro existe antes de borrar
+    const cerro = await req.db.get("SELECT id FROM cerros WHERE id = ?", [cerroId]);
+    if (!cerro) {
+      return res.status(404).json({ error: "Cerro no encontrado para eliminar" });
+    }
+    
+    // 2. Ejecutamos el borrado
+    const result = await req.db.run("DELETE FROM cerros WHERE id = ?", [cerroId]);
+
+    if (result.changes === 0) {
+      // No debería pasar si la comprobación anterior funcionó
+      return res.status(404).json({ error: "El cerro no fue encontrado" });
+    }
+    
+    // NOTA: Tu tabla 'user_favorites' tiene 'ON DELETE CASCADE', 
+    // así que los favoritos se borran automáticamente. ¡Perfecto!
+
+    console.log(`[API DELETE /cerros/${cerroId}] Cerro eliminado exitosamente.`);
+    
+    // 3. Respondemos al frontend con el ID del cerro borrado
+    res.json({ message: "Cerro eliminado", deletedCerroId: cerroId });
+
+  } catch (error) {
+    console.error("Error al eliminar el cerro:", error);
+    res.status(500).json({ error: "Error interno del servidor al eliminar el cerro" });
+  }
+});
+
 
 export default router;

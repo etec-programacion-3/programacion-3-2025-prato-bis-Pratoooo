@@ -1,5 +1,3 @@
-// mi-app/Backend/routes/favoritesRoutes.js (ARCHIVO NUEVO)
-
 import express from "express";
 import authenticateToken from "../middleware/authMiddleware.js"; // Importamos el middleware
 
@@ -42,20 +40,32 @@ router.post("/:cerroId", async (req, res) => {
   }
 
   try {
-    // Verificamos si el cerro existe (opcional pero buena práctica)
-    const cerroExists = await req.db.get("SELECT id FROM cerros WHERE id = ?", [cerroId]);
-    if (!cerroExists) {
+    // 1. Verificamos si el cerro existe
+    //    Usamos la consulta completa para obtener los datos del cerro
+    const cerro = await req.db.get("SELECT * FROM cerros WHERE id = ?", [cerroId]);
+    
+    // Si no existe, devolvemos el error 404 (ESTO ES LO QUE TE PASA A TI)
+    if (!cerro) {
+        console.warn(`[API] Intento de agregar cerro NO existente. ID: ${cerroId}`);
         return res.status(404).json({ error: "Cerro no encontrado" });
     }
 
-    // Intentamos insertar la relación en la tabla user_favorites
-    await req.db.run(
-      "INSERT OR IGNORE INTO user_favorites (user_id, cerro_id) VALUES (?, ?)",
-      [userId, cerroId]
-    );
-    // Usamos 'INSERT OR IGNORE' para que no dé error si ya existe (la clave primaria lo evita)
-    
-    res.status(201).json({ message: "Cerro añadido a favoritos" }); 
+    // 2. Intentamos insertar la relación en la tabla user_favorites
+    try {
+      await req.db.run(
+        "INSERT INTO user_favorites (user_id, cerro_id) VALUES (?, ?)",
+        [userId, cerroId]
+      );
+    } catch (e) {
+      // Si falla (ej: "UNIQUE constraint failed"), es porque ya era favorito.
+      // No es un error, simplemente ya existía.
+      console.log(`[API] El cerro ${cerroId} ya estaba en favoritos para user ${userId}.`);
+    }
+
+    // 3. (MEJORA) Devolvemos el objeto COMPLETO del cerro al frontend.
+    //    Esto permite a React actualizar el estado 'favoriteCerros' fácilmente.
+    res.status(201).json(cerro); 
+
   } catch (error) {
     console.error("Error al añadir favorito:", error);
     res.status(500).json({ error: "Error interno del servidor" });
@@ -84,7 +94,10 @@ router.delete("/:cerroId", async (req, res) => {
        return res.status(404).json({ message: "El cerro no estaba en favoritos" });
     }
 
-    res.json({ message: "Cerro eliminado de favoritos" });
+    // (MEJORA) Devolvemos el ID del cerro eliminado.
+    // Esto permite a React filtrar el estado 'favoriteCerros' fácilmente.
+    res.json({ deletedCerroId: cerroId });
+
   } catch (error) {
     console.error("Error al eliminar favorito:", error);
     res.status(500).json({ error: "Error interno del servidor" });

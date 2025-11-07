@@ -1,11 +1,10 @@
-// mi-app/src/components/CerrosList.jsx (CORREGIDO)
+// mi-app/src/components/CerrosList.jsx
 
 import { useEffect, useState } from "react";
-// Quitamos axios ya que los cerros vienen por props
 import { Link } from "react-router-dom";
 
-// --- Props actualizadas ---
-const CerrosList = ({ cerros, user, favoriteIds, addToFavorites, removeFromFavorites, onLoginClick }) => {
+// --- Props actualizadas (se añade 'handleDeleteCerro') ---
+const CerrosList = ({ cerros, user, favoriteIds, addToFavorites, removeFromFavorites, onLoginClick, handleDeleteCerro }) => {
 
   const [columns, setColumns] = useState(window.innerWidth < 768 ? 1 : 2);
 
@@ -16,7 +15,7 @@ const CerrosList = ({ cerros, user, favoriteIds, addToFavorites, removeFromFavor
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Estilo para el botón de favorito
+  // --- Estilos de Botones ---
   const favButtonStyle = {
     position: 'absolute',
     top: '15px',
@@ -37,28 +36,57 @@ const CerrosList = ({ cerros, user, favoriteIds, addToFavorites, removeFromFavor
     zIndex: 2 // Para estar sobre la imagen
   };
 
+  // --- 👇 NUEVO ESTILO ---
+  const deleteButtonStyle = {
+    position: 'absolute',
+    top: '60px', // Debajo del de favoritos (40px + 15px espacio + 5px)
+    left: '15px',
+    background: 'rgba(52, 73, 94, 0.8)', // Gris oscuro
+    border: 'none',
+    borderRadius: '50%',
+    width: '40px',
+    height: '40px',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    cursor: 'pointer',
+    fontSize: '1.3em', // Un poco más pequeño que fav
+    color: 'white',
+    boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+    transition: 'transform 0.2s, background 0.2s',
+    zIndex: 2
+  };
+
   // --- handleFavClick CON LOGS ---
   const handleFavClick = (e, cerroId, isFav) => {
       e.stopPropagation(); // Evita navegar al detalle al hacer clic en el corazón
       e.preventDefault();
-      console.log(`[CerrosList] handleFavClick called for cerroId: ${cerroId}, isFav: ${isFav}, user exists: ${!!user}`); // DEBUG LOG
+      console.log(`[CerrosList] handleFavClick called for cerroId: ${cerroId}, isFav: ${isFav}, user exists: ${!!user}`); 
       if (!user) {
-          console.log("[CerrosList] No user found, calling onLoginClick."); // DEBUG LOG
+          console.log("[CerrosList] No user found, calling onLoginClick."); 
           onLoginClick(); // Llama a la función pasada por App.jsx
           return;
       }
-      // Llama a la función correspondiente pasada desde App.jsx
       if (isFav) {
-          console.log("[CerrosList] Calling removeFromFavorites..."); // DEBUG LOG
+          console.log("[CerrosList] Calling removeFromFavorites..."); 
           removeFromFavorites(cerroId);
       } else {
-          console.log("[CerrosList] Calling addToFavorites..."); // DEBUG LOG
+          console.log("[CerrosList] Calling addToFavorites..."); 
           addToFavorites(cerroId);
       }
   };
 
+  // --- 👇 NUEVA FUNCIÓN DE MANEJO ---
+  const handleDeleteClick = (e, cerroId) => {
+      e.stopPropagation(); // Evita navegar al detalle
+      e.preventDefault();
+      console.log(`[CerrosList] handleDeleteClick called for cerroId: ${cerroId}`);
+      // La confirmación (window.confirm) ya se hace en App.jsx
+      handleDeleteCerro(cerroId);
+  };
+
+
   // --- Estado de Carga (si cerros aún no llegó de App.jsx) ---
-  // Hacemos una validación más robusta
   if (!Array.isArray(cerros)) {
        console.error("[CerrosList] La prop 'cerros' no es un array:", cerros);
        return (
@@ -68,10 +96,8 @@ const CerrosList = ({ cerros, user, favoriteIds, addToFavorites, removeFromFavor
        );
   }
   if (cerros.length === 0) {
-      // Si el loading de App ya pasó pero cerros sigue vacío
       return (
          <div style={{ padding: "60px", textAlign: "center", fontSize: "1.5em" }}>
-             {/* Podríamos diferenciar si está cargando o si realmente no hay datos */}
              Cargando lista de cerros... O no se encontraron cerros registrados.
          </div>
       );
@@ -86,8 +112,8 @@ return (
     paddingRight: columns === 1 ? "15px" : "20px",
     width: "100%",
     boxSizing: "border-box",
-    backgroundColor: "#f5f5f5",
-    minHeight: "calc(100vh - 70px)" // Asumiendo navbar de 70px
+    backgroundColor: "#f5f5ff", // Un fondo ligeramente azulado
+    minHeight: "calc(100vh - 80px)" // Asumiendo navbar de 80px
   }}>
 
     {/* --- Div interno centrado --- */}
@@ -121,14 +147,12 @@ return (
         }}>
           Descubre las montañas más impresionantes de Argentina
         </p>
-        {/* Mostramos stats solo si hay cerros */}
         {cerros && cerros.length > 0 && (
           <p style={{
             fontSize: columns === 1 ? "0.9em" : "1em",
             marginTop: "15px",
             opacity: 0.85
           }}>
-            {/* Calculamos promedio solo si hay cerros con altura */}
             📊 Total de senderos: {cerros.length} | 📏 Altura promedio: {
               (() => {
                   const cerrosConAltura = cerros.filter(c => typeof c.altura === 'number');
@@ -144,28 +168,24 @@ return (
       {/* --- Grid de cerros --- */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: `repeat(${columns}, 1fr)`,
+        gridTemplateColumns: `repeat(auto-fit, minmax(320px, 1fr))`, // Responsive
         gap: columns === 1 ? "20px" : "30px",
         marginTop: "20px"
       }}>
         {/* --- Mapeo de Cerros --- */}
-        {cerros.map(cerro => { // <-- Abre llave para la función map
-            // Verifica si el cerro actual está en el Set de favoritos
-            // Asegura que cerro.id exista antes de chequear
+        {cerros.map(cerro => { 
             const isFav = cerro && typeof cerro.id === 'number' && favoriteIds.has(cerro.id);
 
-            // Si el cerro no tiene id, no lo renderizamos (o mostramos un error)
             if (!cerro || typeof cerro.id !== 'number') {
                 console.warn("Se encontró un cerro sin ID válido:", cerro);
-                return null; // O un placeholder de error
+                return null; 
             }
 
-            return ( // <-- Abre paréntesis para el JSX devuelto por map
-              // --- Link a DetalleCerro ---
+            return ( 
               <Link
-                key={cerro.id} // Usamos el ID como key
+                key={cerro.id} 
                 to={`/cerro/${cerro.id}`}
-                style={{ textDecoration: "none", color: "inherit", display: 'block', height: '100%' }} // display block y height 100% para que el link ocupe toda la tarjeta
+                style={{ textDecoration: "none", color: "inherit", display: 'block', height: '100%' }}
               >
                 {/* --- Tarjeta --- */}
                 <div style={{
@@ -176,13 +196,13 @@ return (
                   boxShadow: "0 5px 20px rgba(0,0,0,0.1)",
                   transition: "all 0.3s ease",
                   cursor: "pointer",
-                  height: "100%", // Para que todas las tarjetas tengan misma altura en la fila
+                  height: "100%", 
                   display: "flex",
                   flexDirection: "column",
-                  position: 'relative' // Necesario para el botón de favorito
+                  position: 'relative' // Necesario para botones
                 }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-5px)"; // Efecto hover más sutil
+                    e.currentTarget.style.transform = "translateY(-5px)"; 
                     e.currentTarget.style.boxShadow = "0 8px 25px rgba(0,0,0,0.15)";
                   }}
                   onMouseLeave={(e) => {
@@ -192,77 +212,96 @@ return (
                 >
                   {/* --- Contenedor Imagen --- */}
                   <div style={{
-                      position: "relative", // Para posicionar botones encima
+                      position: "relative", 
                       overflow: "hidden",
-                      height: columns === 1 ? "200px" : "280px" // Altura de imagen
+                      height: "280px" // Altura fija
                   }}>
                     {/* --- Imagen --- */}
                     <img
-                      src={cerro.imagen || 'https://via.placeholder.com/400x300?text=Sin+Imagen'} // Imagen por defecto
+                      src={cerro.imagen || 'https://via.placeholder.com/400x300?text=Sin+Imagen'} 
                       alt={cerro.nombre || 'Cerro sin nombre'}
                       style={{
                         width: "100%",
                         height: "100%",
-                        objectFit: "cover", // Escala y recorta para llenar el espacio
-                        transition: "transform 0.3s ease" // Efecto zoom suave al pasar mouse (opcional)
+                        objectFit: "cover", 
+                        transition: "transform 0.3s ease" 
                       }}
-                       // Manejo de error si la imagen no carga
                        onError={(e) => { e.target.onerror = null; e.target.src='https://via.placeholder.com/400x300?text=Error+Imagen'; }}
                     />
 
                     {/* --- Botón de Favorito --- */}
-                    {user ? ( // Si hay usuario logueado
+                    {user ? ( 
                       <button
                         style={{
                           ...favButtonStyle,
-                          color: isFav ? '#e74c3c' : '#ccc', // Cambia color basado en isFav
+                          color: isFav ? '#e74c3c' : '#ccc', // Cambia color
                         }}
-                        onClick={(e) => handleFavClick(e, cerro.id, isFav)} // Llama a la función de manejo
-                        onMouseEnter={(e) => e.target.style.transform = 'scale(1.1)'} // Efecto visual
-                        onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}  // Efecto visual
-                        title={isFav ? "Quitar de favoritos" : "Añadir a favoritos"} // Texto de ayuda
+                        onClick={(e) => handleFavClick(e, cerro.id, isFav)} 
+                        onMouseEnter={(e) => e.target.style.transform = 'scale(1.1)'} 
+                        onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}  
+                        title={isFav ? "Quitar de favoritos" : "Añadir a favoritos"} 
                       >
-                        {isFav ? '❤️' : '♡'} {/* Cambia ícono basado en isFav */}
+                        {isFav ? '❤️' : '♡'} 
                       </button>
-                    ) : ( // Si no hay usuario logueado
+                    ) : ( 
                          <button
-                           style={{ ...favButtonStyle, color: '#ccc', cursor: 'pointer' }} // Corazón gris
-                           onClick={(e) => handleFavClick(e, cerro.id, false)} // Llama igual para abrir modal login
-                           title="Inicia sesión para añadir a favoritos" // Texto de ayuda
+                           style={{ ...favButtonStyle, color: '#ccc', cursor: 'pointer' }} 
+                           onClick={(e) => handleFavClick(e, cerro.id, false)} 
+                           title="Inicia sesión para añadir a favoritos" 
                          >
-                            ♡ {/* Siempre corazón vacío */}
+                            ♡ 
                          </button>
                     )}
+
+                    {/* --- 👇 NUEVO BOTÓN DE BORRAR --- */}
+                    {user && ( // Solo usuarios logueados pueden ver el botón
+                      <button
+                        style={deleteButtonStyle}
+                        onClick={(e) => handleDeleteClick(e, cerro.id)}
+                        onMouseEnter={(e) => {
+                           e.target.style.transform = 'scale(1.1)';
+                           e.target.style.background = '#c0392b'; // Se pone rojo en hover
+                        }}
+                        onMouseLeave={(e) => {
+                           e.target.style.transform = 'scale(1)';
+                           e.target.style.background = 'rgba(52, 73, 94, 0.8)';
+R                        }}
+                        title="Eliminar cerro (¡Permanente!)"
+                      >
+                        🗑️
+                      </button>
+                    )}
+                    {/* --- FIN NUEVO BOTÓN --- */}
 
                     {/* --- Badge altura --- */}
                     <div style={{
                       position: "absolute",
-                      top: "15px", // Lo dejamos arriba a la derecha
+                      top: "15px", 
                       right: "15px",
                       background: "rgba(255,255,255,0.95)",
-                      padding: columns === 1 ? "6px 12px" : "8px 15px",
+                      padding: "8px 15px",
                       borderRadius: "20px",
                       fontWeight: "bold",
                       color: "#4a5c36", // Verde oscuro
-                      fontSize: columns === 1 ? "0.8em" : "0.9em",
+                      fontSize: "0.9em",
                       boxShadow: "0 4px 10px rgba(0,0,0,0.2)"
                     }}>
-                      📏 {(cerro.altura || 0).toLocaleString()}m {/* Maneja altura undefined */}
+                      📏 {(cerro.altura || 0).toLocaleString()}m 
                     </div>
                   </div> {/* --- Fin Contenedor Imagen --- */}
 
                   {/* --- Contenido de la Tarjeta --- */}
                   <div style={{
-                    padding: columns === 1 ? "20px" : "25px",
-                    flex: 1, // Ocupa el espacio restante verticalmente
+                    padding: "25px",
+                    flex: 1, 
                     display: "flex",
-                    flexDirection: "column" // Organiza elementos verticalmente
+                    flexDirection: "column" 
                   }}>
                     {/* --- Nombre --- */}
                     <h2 style={{
-                      margin: "0 0 10px 0", // Reducido margen inferior
+                      margin: "0 0 10px 0", 
                       color: "#2c3e50",
-                      fontSize: columns === 1 ? "1.4em" : "1.7em", // Ligeramente más pequeño
+                      fontSize: "1.7em", 
                       fontWeight: "600",
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
@@ -275,15 +314,15 @@ return (
                     <div style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: "8px", // Reducido gap
+                      gap: "8px", 
                       marginBottom: "15px",
-                      padding: "8px 12px", // Reducido padding
-                      background: "#f8f9fa", // Fondo gris claro
-                      borderRadius: "8px" // Redondeado
+                      padding: "8px 12px", 
+                      background: "#f8f9fa", 
+                      borderRadius: "8px" 
                     }}>
                       <span style={{ fontSize: "1.1em" }}>📍</span>
                       <span style={{
-                        fontSize: columns === 1 ? "0.9em" : "0.95em", // Ligeramente más pequeño
+                        fontSize: "0.95em", 
                         color: "#555",
                         fontWeight: "500"
                       }}>
@@ -293,43 +332,43 @@ return (
 
                     {/* --- Descripción --- */}
                     <p style={{
-                      fontSize: columns === 1 ? "0.85em" : "0.9em", // Ligeramente más pequeño
+                      fontSize: "0.9em", 
                       color: "#666",
-                      lineHeight: "1.6", // Ligeramente más compacto
-                      margin: "0 0 15px 0", // Margen inferior
-                      flexGrow: 1, // Ocupa el espacio disponible para empujar "Ver más"
+                      lineHeight: "1.6", 
+                      margin: "0 0 15px 0", 
+                      flexGrow: 1, 
                       display: "-webkit-box",
                       WebkitLineClamp: 3,
                       WebkitBoxOrient: "vertical",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
-                      minHeight: '45px' // Ajusta según necesites
+                      minHeight: '54px' // 3 líneas * 1.6 * 0.9em
                     }}>
                       {cerro.descripcion || 'Sin descripción.'}
                     </p>
 
                     {/* --- Ver más --- */}
                     <div style={{
-                      marginTop: "auto", // Empuja esto al fondo
-                      paddingTop: "10px", // Espacio sobre la línea
-                      borderTop: "1px solid #eee", // Línea divisoria
-                      color: "#8b5a2b", // Marrón
+                      marginTop: "auto", 
+                      paddingTop: "10px", 
+                      borderTop: "1px solid #eee", 
+                      color: "#8b5a2b", 
                       fontWeight: "bold",
-                      fontSize: columns === 1 ? "0.9em" : "1em",
-                      textAlign: 'right' // Alineado a la derecha
+                      fontSize: "1em",
+                      textAlign: 'right' 
                     }}>
                       Ver más →
                     </div>
                   </div> {/* --- Fin Contenido --- */}
                 </div> {/* --- Fin Tarjeta --- */}
-              </Link> // <-- Cierre del Link
-            ); // <-- Cierre del return dentro del map
-          })} {/* <-- Cierre EXACTO del map */}
+              </Link> 
+            ); 
+          })} 
       </div> {/* --- Fin Grid --- */}
 
     </div> {/* --- Fin Div interno --- */}
-  </div> // --- Fin Div externo ---
-); // <-- Cierre del return principal del componente
-}; // <-- Cierre de la función del componente
+  </div> 
+); 
+}; 
 
-export default CerrosList; // Exportación
+export default CerrosList;
