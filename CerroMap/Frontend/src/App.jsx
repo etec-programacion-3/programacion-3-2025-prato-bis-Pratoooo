@@ -1,4 +1,4 @@
-// mi-app/src/App.jsx (COMPLETO CON LOGS Y DELETE)
+// mi-app/src/App.jsx (COMPLETO CON TODO)
 
 import { useState, useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
@@ -13,6 +13,10 @@ import Favoritos from './components/Favoritos';
 import CargarCerro from './components/CargarCerro';
 import HomePage from './components/HomePage';
 import PremiumPage from './components/PremiumPage';
+// --- 👇 NUEVOS COMPONENTES ---
+import MisCerros from './components/MisCerros';
+import EditarCerro from './components/EditarCerro';
+
 
 // Creamos una instancia de axios para no repetir la URL base
 const apiClient = axios.create({
@@ -67,8 +71,6 @@ function App() {
                 const response = await apiClient.get('/favorites', {
                     headers: { Authorization: `Bearer ${storedToken}` }
                 });
-                // ¡CORRECCIÓN IMPORTANTE! Tus favoritos vienen como objetos de cerros
-                // La ruta GET /favorites devuelve el objeto cerro, no el ID
                 const cerrosFavoritos = response.data;
                 const ids = cerrosFavoritos.map(fav => fav.id);
                 setFavoriteIds(new Set(ids));
@@ -208,11 +210,7 @@ function App() {
       });
       console.log("[App] API POST successful:", response.data); 
       
-      // La API (corregida) ahora devuelve el objeto cerro
-      // const cerroAgregado = response.data; 
-      
       setFavoriteIds(prevIds => {
-          // Usamos el cerroId que pasamos, es más simple
           const newIds = new Set(prevIds).add(cerroId);
           console.log("[App] Updated favoriteIds state (added):", newIds); 
           return newIds;
@@ -262,7 +260,7 @@ function App() {
     }
   };
 
-  // --- 👇 NUEVA FUNCIÓN ---
+  // --- handleDeleteCerro (Se mantiene como estaba) ---
   const handleDeleteCerro = async (cerroId) => {
     console.log(`[App] handleDeleteCerro called for cerroId: ${cerroId}`);
     
@@ -272,8 +270,6 @@ function App() {
       return;
     }
 
-    // ¡Preguntamos antes de borrar!
-    // Usamos 'confirm' de window. Es simple y bloquea la ejecución.
     if (!window.confirm("¿Estás seguro de que quieres eliminar este cerro de la base de datos? Esta acción no se puede deshacer.")) {
       console.log("[App] Borrado cancelado por el usuario.");
       return; 
@@ -281,22 +277,19 @@ function App() {
 
     console.log(`[App] Attempting API DELETE request to /cerros/${cerroId}`);
     try {
-      // 1. Llamamos a la nueva ruta del backend
       const response = await apiClient.delete(`/cerros/${cerroId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      const deletedId = response.data.deletedCerroId; // Obtenemos el ID desde la respuesta
+      const deletedId = response.data.deletedCerroId; 
       console.log("[App] API DELETE successful:", response.data);
 
-      // 2. Actualizamos el estado de 'cerros' (quitamos el borrado)
       setCerros(prevCerros => {
         const newCerros = prevCerros.filter(c => c.id !== deletedId);
         console.log("[App] Updated 'cerros' state (removed).");
         return newCerros;
       });
 
-      // 3. (Limpieza) También lo quitamos del estado de favoritos si estaba
       setFavoriteIds(prevIds => {
         if (prevIds.has(deletedId)) {
           const newIds = new Set(prevIds);
@@ -304,25 +297,40 @@ function App() {
           console.log("[App] Removed from 'favoriteIds' state as well.");
           return newIds;
         }
-        return prevIds; // Devuelve los IDs sin cambios si no estaba
+        return prevIds; 
       });
 
     } catch (error) {
       console.error("[App] Error deleting cerro via API:", error.response?.data || error.message);
+      // La API ahora devuelve 403 (Prohibido) si no eres el dueño
       setMessage(`❌ Error al eliminar cerro: ${error.response?.data?.error || error.message}`);
-       if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+       
+       // --- 👇 ¡ESTE ES EL ÚNICO CAMBIO! ---
+       // Solo cerramos sesión si es 401 (Token inválido).
+       // Un 403 (Prohibido) es un error esperado (no eres el dueño), no un error de sesión.
+       if (error.response && error.response.status === 401) {
           handleLogout();
        }
+       // --- 👆 FIN DEL CAMBIO ---
     }
   };
   
-  // --- Función para CargarCerro ---
-  const handleCerroAdded = (newCerro) => {
-    console.log("[App] handleCerroAdded called with:", newCerro);
+  // --- Función para CargarCerro (renombrada) ---
+  const handleCerroAddedOrUpdated = (updatedCerro) => {
+    console.log("[App] handleCerroAddedOrUpdated called with:", updatedCerro);
     setCerros(prevCerros => {
-        const updatedCerros = [...prevCerros, newCerro];
-        console.log("[App] 'cerros' state updated with new cerro.");
-        return updatedCerros;
+      // Revisa si el cerro ya existe (para el caso de UPDATE)
+      const exists = prevCerros.some(c => c.id === updatedCerro.id);
+      
+      if (exists) {
+        // Es un UPDATE: Mapea y reemplaza el cerro actualizado
+        console.log("[App] Cerro detectado como existente, actualizando estado.");
+        return prevCerros.map(c => (c.id === updatedCerro.id ? updatedCerro : c));
+      } else {
+        // Es un CREATE: Añade el cerro nuevo
+        console.log("[App] Cerro detectado como nuevo, añadiendo al estado.");
+        return [...prevCerros, updatedCerro];
+      }
     });
   };
 
@@ -410,7 +418,7 @@ function App() {
               addToFavorites={addToFavorites}
               removeFromFavorites={removeFromFavorites}
               onLoginClick={handleOpenLoginModal}
-              handleDeleteCerro={handleDeleteCerro} // <-- PROP NUEVA
+              handleDeleteCerro={handleDeleteCerro} // Pasamos la función de borrar
             />
           }
         />
@@ -424,8 +432,6 @@ function App() {
               addToFavorites={addToFavorites}
               removeFromFavorites={removeFromFavorites}
                onLoginClick={handleOpenLoginModal}
-               // Podrías pasar 'handleDeleteCerro' aquí también
-               // handleDeleteCerro={handleDeleteCerro} 
             />
            }
         />
@@ -433,7 +439,7 @@ function App() {
           path="/favoritos"
           element={
             <Favoritos
-              favoriteCerros={favoriteCerroObjects}
+              favoriteCerroObjects={favoriteCerroObjects}
               removeFromFavorites={removeFromFavorites}
               user={user}
               onLoginClick={handleOpenLoginModal}
@@ -444,14 +450,36 @@ function App() {
             path="/cargar" 
             element={
                 <CargarCerro 
-                    onCerroAdded={handleCerroAdded} 
-                    // Necesitamos pasar el token para saber si mostrar el form
-                    // o pedir login.
+                    onCerroAdded={handleCerroAddedOrUpdated} 
                     token={token}
                     onLoginClick={handleOpenLoginModal}
                 />
             } 
         />
+        
+        {/* --- 👇 NUEVAS RUTAS --- */}
+        <Route
+            path="/mis-cerros"
+            element={
+                <MisCerros
+                    token={token}
+                    user={user}
+                    handleDeleteCerro={handleDeleteCerro} // Reutilizamos la función
+                />
+            }
+        />
+        <Route
+            path="/editar-cerro/:id"
+            element={
+                <EditarCerro
+                    token={token}
+                    onLoginClick={handleOpenLoginModal}
+                    onCerroUpdated={handleCerroAddedOrUpdated} // Reutilizamos la función
+                />
+            }
+        />
+        {/* --- 👆 FIN NUEVAS RUTAS --- */}
+
         <Route path="/premium" element={<PremiumPage />} />
       </Routes>
     </div>

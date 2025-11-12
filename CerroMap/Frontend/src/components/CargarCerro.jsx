@@ -2,14 +2,13 @@ import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-// Creamos una instancia de axios para este componente
-// (Apunta a la misma URL base que tu App.jsx)
+// Creamos una instancia de axios
 const apiClient = axios.create({
   baseURL: 'http://localhost:3001',
 });
 
-// Recibimos la prop 'onCerroAdded' desde App.jsx
-const CargarCerro = ({ onCerroAdded }) => {
+// --- 👇 Recibimos 'token' y 'onLoginClick' ---
+const CargarCerro = ({ onCerroAdded, token, onLoginClick }) => {
   const [formData, setFormData] = useState({
     nombre: '',
     altura: '',
@@ -32,9 +31,14 @@ const CargarCerro = ({ onCerroAdded }) => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Evita que la página se recargue
+    e.preventDefault(); 
     
-    // Validación simple
+    if (!token) {
+        setError('Debes estar logueado para cargar un cerro.');
+        onLoginClick(); // Abre el modal de login
+        return;
+    }
+
     if (!formData.nombre || !formData.altura) {
       setError('El nombre y la altura son obligatorios.');
       return;
@@ -47,38 +51,37 @@ const CargarCerro = ({ onCerroAdded }) => {
     console.log("Enviando datos al backend:", formData);
 
     try {
-      // Usamos la ruta POST /cerros que creamos en el backend
-      const response = await apiClient.post('/cerros', formData);
+      // Usamos la ruta POST /cerros
+      // La API ahora requiere un token, así que lo añadimos
+      const response = await apiClient.post('/cerros', formData, {
+         headers: { Authorization: `Bearer ${token}` } // <-- ¡IMPORTANTE!
+      });
       
-      // Si la API responde bien (201)...
       const newCerro = response.data;
       console.log("Respuesta del backend (nuevo cerro):", newCerro);
       
-      // 1. Llamamos a la función de App.jsx para actualizar el estado global
+      // Llamamos a la función de App.jsx para actualizar el estado global
       onCerroAdded(newCerro);
-
-      // 2. Mostramos un mensaje de éxito
       setMessage(`✅ ¡Cerro "${newCerro.nombre}" guardado con éxito!`);
       
-      // 3. Limpiamos el formulario
       setFormData({
         nombre: '', altura: '', provincia: '', descripcion: '', imagen: ''
       });
 
-      // 4. (Opcional) Redirigimos a la lista de senderos después de 2 segundos
       setTimeout(() => {
         navigate('/senderos');
       }, 2000);
 
     } catch (err) {
       console.error("Error al guardar el cerro:", err.response || err.message);
+      // El error 401 (No autorizado) o 403 (Prohibido) vendrá aquí
       setError(err.response?.data?.error || 'No se pudo conectar con el servidor.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // --- Estilos (similares a los de tu AuthModal) ---
+  // --- Estilos ---
   const formStyle = {
     maxWidth: '700px',
     margin: '40px auto',
@@ -97,10 +100,10 @@ const CargarCerro = ({ onCerroAdded }) => {
     border: '2px solid #ddd',
     borderRadius: '10px',
     boxSizing: 'border-box'
-  };
+   };
    
   const btnStyle = {
-    backgroundColor: isLoading ? '#ccc' : '#4a5c36', // Verde oscuro
+    backgroundColor: isLoading ? '#ccc' : '#4a5c36', 
     color: 'white',
     border: 'none',
     padding: '12px 15px',
@@ -112,7 +115,32 @@ const CargarCerro = ({ onCerroAdded }) => {
     fontWeight: 'bold',
     boxSizing: 'border-box'
   };
+  
+  const loginButtonStyle = {
+       color: '#8b5a2b',
+       background: 'none',
+       border: 'none',
+       textDecoration: 'underline',
+       cursor: 'pointer',
+       fontSize: '1em',
+       padding: 0, 
+       fontWeight: 'bold'
+   };
 
+  // --- 👇 VERIFICACIÓN DE TOKEN ---
+  // Si no hay token, no mostramos el formulario
+  if (!token) {
+     return (
+       <div style={{ padding: '40px', maxWidth: '700px', margin: '40px auto', textAlign: 'center', backgroundColor: '#fff', borderRadius: '15px', boxShadow: '0 5px 15px rgba(0,0,0,0.1)' }}>
+         <h1 style={{color: '#4a5c36', marginBottom: '20px'}}>🏔️ Cargar Nuevo Cerro</h1>
+         <p style={{fontSize: '1.1em', color: '#555'}}>
+           Debes <button onClick={onLoginClick} style={loginButtonStyle}>iniciar sesión</button> para poder cargar un nuevo cerro.
+         </p>
+       </div>
+     );
+  }
+
+  // Si SÍ hay token, mostramos el formulario
   return (
     <div style={formStyle}>
       <h1 style={{ textAlign: 'center', color: '#4a5c36' }}>🏔️ Cargar Nuevo Cerro</h1>

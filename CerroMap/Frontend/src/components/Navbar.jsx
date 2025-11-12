@@ -133,22 +133,21 @@ const Navbar = ({ user, handleLogout, onLoginClick, onRegisterClick }) => {
             🗺️ Mapa
           </Link>
           
-          {/* --- 👇 LINK PREMIUM AÑADIDO --- */}
+          {/* --- LINK PREMIUM (TU CÓDIGO EXACTO) --- */}
           <Link 
             to="/premium" 
             style={{
-              ...authBtnStyle, // Usa el mismo estilo base
+              ...authBtnStyle, 
               textDecoration: 'none', 
-              background: 'rgba(255, 215, 0, 0.2)' // Fondo dorado suave
+              background: 'rgba(255, 215, 0, 0.2)' 
             }} 
-            onMouseEnter={(e) => e.target.style.background = 'rgba(255, 215, 0, 0.3)'} // Efecto hover
-            onMouseLeave={(e) => e.target.style.background = 'rgba(255, 215, 0, 0.2)'} // Volver al normal
+            onMouseEnter={(e) => e.target.style.background = 'rgba(255, 215, 0, 0.3)'} 
+            onMouseLeave={(e) => e.target.style.background = 'rgba(255, 215, 0, 0.2)'} 
           >
             💎 Premium
           </Link>
-          {/* --- 👆 FIN LINK PREMIUM AÑADIDO --- */}
 
-          {/* --- Lógica de Login/Logout (TU CÓDIGO EXACTO) --- */}
+          {/* --- Lógica de Login/Logout (MODIFICADA) --- */}
           {user ? (
             <div style={{ position: 'relative' }} ref={menuRef}>
               <button 
@@ -157,7 +156,8 @@ const Navbar = ({ user, handleLogout, onLoginClick, onRegisterClick }) => {
                 onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.3)'}
                 onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.2)'}
               >
-                👤 {user.username || user} <span>▼</span>
+                {/* --- 👇 CAMBIO AQUÍ (para evitar [object Object]) --- */}
+                👤 {user.username || 'Mi Perfil'} <span>▼</span>
               </button>
               {isMenuOpen && (
                 <div style={dropdownMenu}>
@@ -170,6 +170,19 @@ const Navbar = ({ user, handleLogout, onLoginClick, onRegisterClick }) => {
                   >
                     ❤️ Mis Favoritos
                   </Link>
+
+                  {/* --- 👇 NUEVO ENLACE AÑADIDO --- */}
+                  <Link 
+                    to="/mis-cerros" 
+                    style={dropdownItem} 
+                    onClick={() => setIsMenuOpen(false)}
+                    onMouseEnter={(e) => e.target.style.backgroundColor = '#f5f5f5'}
+                    onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
+                  >
+                    ✍️ Mis Cerros
+                  </Link>
+                  {/* --- 👆 FIN NUEVO ENLACE --- */}
+
                   <Link 
                     to="/cargar" 
                     style={dropdownItem} 
