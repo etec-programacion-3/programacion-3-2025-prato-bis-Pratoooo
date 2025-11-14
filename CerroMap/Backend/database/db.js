@@ -1,7 +1,7 @@
 import sqlite3 from "sqlite3";
 import { open } from "sqlite";
 
-// --- 👇 LISTA DE CERROS ACTUALIZADA (12 cerros) ---
+// --- 👇 LISTA DE CERROS ACTUALIZADA (12 cerros con imágenes nuevas) ---
 const cerrosData = [
   { id: 1, nombre: "Aconcagua", altura: 6960, provincia: "Mendoza", descripcion: "El pico más alto de América y del hemisferio sur. El 'Coloso de América'.", imagen: "https://images.unsplash.com/photo-1589182373726-e4b6c6f6d7d2?w=800&q=80" },
   { id: 2, nombre: "Tupungato", altura: 6570, provincia: "Mendoza", descripcion: "Estratovolcán en la frontera con Chile. 'Mirador de las estrellas'.", imagen: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80" },
@@ -18,9 +18,10 @@ const cerrosData = [
 ];
 // --- 👆 FIN DE LA LISTA ---
 
+
 export async function initDB() {
   const db = await open({
-    filename: "./database.sqlite", // El archivo se creará FUERA de la carpeta 'database'
+    filename: "./database.sqlite", // Se crea en la carpeta Backend/
     driver: sqlite3.Database,
   });
 

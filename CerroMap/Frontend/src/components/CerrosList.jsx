@@ -1,3 +1,4 @@
+
 // mi-app/src/components/CerrosList.jsx
 
 import { useEffect, useState } from "react";
@@ -10,6 +11,7 @@ const CerrosList = ({ cerros, user, favoriteIds, addToFavorites, removeFromFavor
 
   useEffect(() => {
     const handleResize = () => {
+      // 768px es un punto de quiebre común para tablets
       setColumns(window.innerWidth < 768 ? 1 : 2);
     };
     window.addEventListener('resize', handleResize);
@@ -57,7 +59,10 @@ return (
     width: "100%", minHeight: "calc(100vh - 70px)", padding: "40px 20px",
     boxSizing: "border-box", backgroundColor: "#f4f7f6", 
   }}>
-    <div style={{ maxWidth: "1400px", margin: "0 auto" }}>
+    <div style={{ 
+        maxWidth: "1400px", // Ancho máximo
+        margin: "0 auto" 
+    }}>
 
       {/* --- Header (sin cambios) --- */}
       <div style={{
@@ -72,7 +77,7 @@ return (
       {/* --- 👇 GRILLA (GRID) CORREGIDA --- */}
       <div style={{
         display: "grid",
-        // Aquí usamos el estado 'columns' para 1 o 2 columnas
+        // Aquí usamos el estado 'columns' para forzar 1 o 2 columnas
         gridTemplateColumns: `repeat(${columns}, 1fr)`,
         gap: "30px",
       }}>
@@ -85,16 +90,15 @@ return (
 
             return (
               // --- 👇 TARJETA (Link) ---
-              // Súper importante: 'display: flex' y 'flexDirection: column'
-              // Hacen que la tarjeta ocupe el 100% del alto disponible en la grilla
+              // Flexbox fuerza a la tarjeta a ocupar el 100% del alto
               <Link
                 key={cerro.id} 
                 to={`/cerro/${cerro.id}`}
                 style={{ 
                     textDecoration: "none", 
                     color: "inherit",
-                    display: 'flex', // <-- ESTA ES LA MAGIA
-                    flexDirection: 'column', // <-- ESTA ES LA MAGIA
+                    display: 'flex', // <-- Magia
+                    flexDirection: 'column', // <-- Magia
                     height: '100%' 
                 }}
               >
@@ -103,9 +107,9 @@ return (
                   border: "none", borderRadius: "20px", overflow: "hidden",
                   background: "white", boxShadow: "0 5px 20px rgba(0,0,0,0.08)",
                   transition: "all 0.3s ease", cursor: "pointer",
-                  display: "flex", // <-- ESTA ES LA MAGIA
-                  flexDirection: "column", // <-- ESTA ES LA MAGIA
-                  flexGrow: 1 // <-- ESTA ES LA MAGIA (crece para llenar el espacio)
+                  display: "flex", // <-- Magia
+                  flexDirection: "column", // <-- Magia
+                  flexGrow: 1 // <-- Magia (crece para llenar el espacio)
                 }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = "translateY(-5px)";
@@ -173,7 +177,7 @@ return (
                     padding: "25px",
                     display: "flex",
                     flexDirection: "column",
-                    flexGrow: 1, // <-- ESTA ES LA MAGIA (crece)
+                    flexGrow: 1, // <-- Magia (crece)
                   }}>
                     
                     <h2 style={{
@@ -195,7 +199,7 @@ return (
                     <p style={{
                       fontSize: "0.9em", color: "#666", lineHeight: "1.6", 
                       margin: "0 0 15px 0", 
-                      flexGrow: 1, // <-- ESTA ES LA MAGIA (crece)
+                      flexGrow: 1, // <-- Magia (crece)
                       display: "-webkit-box", WebkitLineClamp: 3,
                       WebkitBoxOrient: "vertical", overflow: "hidden",
                       textOverflow: "ellipsis", minHeight: '54px' 
@@ -204,7 +208,7 @@ return (
                     </p>
 
                     <div style={{
-                      marginTop: "auto", // <-- ESTA ES LA MAGIA (empuja al fondo)
+                      marginTop: "auto", // <-- Magia (empuja al fondo)
                       paddingTop: "10px", borderTop: "1px solid #eee", 
                       color: "#8b5a2b", fontWeight: "bold",
                       fontSize: "1em", textAlign: 'right' 

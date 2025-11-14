@@ -3,68 +3,61 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 const router = express.Router();
-const SECRET_KEY = "clave_super_segura"; // Cambiala si querés más seguridad
+const saltRounds = 10;
+// La clave ahora se lee desde el archivo .env
+const JWT_SECRET = process.env.JWT_SECRET;
 
-// Registro de usuario nuevo
+if (!JWT_SECRET) {
+  throw new Error("La variable JWT_SECRET no está definida en el archivo .env");
+}
+
+// ... (el resto de tu archivo authRoutes.js) ...
+// (Pégalo aquí, solo asegúrate de que la línea 'const JWT_SECRET =' esté como arriba)
+// ...
+
+// Ejemplo de tu ruta /register
 router.post("/register", async (req, res) => {
-  // --- 👇 CORRECIÓN 1: Leer todos los campos que envía el frontend ---
   const { username, email, password } = req.body;
-
-  // --- 👇 CORRECIÓN 1 (cont.): Validar los TRES campos ---
   if (!username || !email || !password) {
-    return res.status(400).json({ error: "Faltan datos" });
+    return res.status(400).json({ error: "Todos los campos son requeridos" });
   }
-
   try {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    
-    // --- 👇 CORRECIÓN 1 (cont.): Insertar los TRES campos en la DB ---
-    await req.db.run(
-      "INSERT INTO users (username, email, password) VALUES (?, ?, ?)", 
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const result = await req.db.run(
+      "INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
       [username, email, hashedPassword]
     );
-    
-    res.json({ message: "Usuario registrado correctamente" });
+    res.status(201).json({ id: result.lastID, username, email });
   } catch (error) {
-    if (error.message.includes("UNIQUE")) {
-      // Mejoramos el mensaje de error por si uno de los dos ya existe
-      res.status(400).json({ error: "El usuario o el email ya existe" });
-    } else {
-      console.error(error);
-      res.status(500).json({ error: "Error interno del servidor" });
+    if (error.code === "SQLITE_CONSTRAINT") {
+      return res.status(400).json({ error: "El usuario o email ya existe" });
     }
+    res.status(500).json({ error: "Error al registrar usuario" });
   }
 });
 
-// Inicio de sesión
+// Ejemplo de tu ruta /login
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
-
-  const user = await req.db.get("SELECT * FROM users WHERE username = ?", [username]);
-  if (!user) {
-    return res.status(400).json({ error: "Usuario no encontrado" });
+  if (!username || !password) {
+    return res.status(400).json({ error: "Usuario y contraseña requeridos" });
   }
-
-  const validPassword = await bcrypt.compare(password, user.password);
-  if (!validPassword) {
-    return res.status(400).json({ error: "Contraseña incorrecta" });
+  try {
+    const user = await req.db.get("SELECT * FROM users WHERE username = ?", [username]);
+    if (!user) {
+      return res.status(401).json({ error: "Credenciales inválidas" });
+    }
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
+      return res.status(401).json({ error: "Credenciales inválidas" });
+    }
+    const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, {
+      expiresIn: "1h",
+    });
+    res.json({ token, user: { id: user.id, username: user.username } });
+  } catch (error) {
+    res.status(500).json({ error: "Error al iniciar sesión" });
   }
-
-  const token = jwt.sign({ id: user.id, username: user.username }, SECRET_KEY, { expiresIn: "2h" });
-
-  // --- 👇 CORRECIÓN 2: Devolver el objeto 'user' al frontend ---
-  // Tu App.jsx lo necesita para hacer setUser(response.data.user)
-  const userToReturn = {
-    id: user.id,
-    username: user.username,
-    email: user.email
-  };
-
-  res.json({ 
-    message: "Inicio de sesión exitoso", 
-    token,
-    user: userToReturn // 👈 AÑADIDO
-  });
 });
 
 export default router;

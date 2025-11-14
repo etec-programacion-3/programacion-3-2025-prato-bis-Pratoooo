@@ -1,31 +1,26 @@
-// mi-app/Backend/middleware/authMiddleware.js (ARCHIVO NUEVO)
+import jwt from "jsonwebtoken";
 
-import jwt from 'jsonwebtoken';
+// La clave ahora se lee desde el archivo .env
+const JWT_SECRET = process.env.JWT_SECRET;
 
-const SECRET_KEY = "clave_super_segura"; // La misma clave que usaste en authRoutes.js
+if (!JWT_SECRET) {
+  throw new Error("La variable JWT_SECRET no está definida en el archivo .env");
+}
 
 const authenticateToken = (req, res, next) => {
-  // Obtenemos el token del header 'Authorization' (formato: "Bearer TOKEN")
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // Extrae solo el TOKEN
+  const token = authHeader && authHeader.split(' ')[1]; // Formato "Bearer TOKEN"
 
   if (token == null) {
-    // Si no hay token, no está autorizado
-    return res.sendStatus(401); // Unauthorized
+    return res.status(401).json({ error: "Token no provisto" }); // 401 No autorizado
   }
 
-  // Verificamos el token
-  jwt.verify(token, SECRET_KEY, (err, user) => {
+  jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) {
-      console.error("Error al verificar token:", err);
-      // Si el token es inválido o expiró
-      return res.sendStatus(403); // Forbidden
+      return res.status(403).json({ error: "Token inválido" }); // 403 Prohibido
     }
-    
-    // Si el token es válido, guardamos la info del usuario en req.user
-    // para que las siguientes rutas puedan usarla (ej. req.user.id)
-    req.user = user; 
-    next(); // Pasamos al siguiente middleware o a la ruta
+    req.user = user; // Guarda el payload del token (ej: { id: 1, username: 'pepe' })
+    next();
   });
 };
 

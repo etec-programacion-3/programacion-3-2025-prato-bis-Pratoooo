@@ -1,0 +1,8 @@
+# Archivo de Base de Datos
+database.sqlite
+
+# Dependencias
+node_modules/
+
+# Archivo de variables de entorno
+.env
