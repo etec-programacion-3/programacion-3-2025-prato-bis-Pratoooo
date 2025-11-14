@@ -1,4 +1,3 @@
-
 // mi-app/src/components/CerrosList.jsx
 
 import { useEffect, useState } from "react";
